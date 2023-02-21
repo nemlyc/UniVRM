@@ -10,10 +10,12 @@ namespace UniGLTF
     {
         public static async Task<RuntimeGltfInstance> LoadAsync(string path, IAwaitCaller awaitCaller = null, IMaterialDescriptorGenerator materialGenerator = null)
         {
+#if !UNITY_WEBGL
             if (!File.Exists(path))
             {
                 throw new FileNotFoundException(path);
             }
+#endif
 
             if (awaitCaller == null)
             {
