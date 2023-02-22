@@ -25,16 +25,26 @@ namespace UniGLTF
 
                 request.SendWebRequest();
 
+                while (!request.isDone)
+                {
+                    UnityEngine.Debug.Log(request.downloadProgress);
+                    if (request.result == UnityWebRequest.Result.ConnectionError || 
+                        request.result == UnityWebRequest.Result.DataProcessingError ||
+                        request.result == UnityWebRequest.Result.ProtocolError)
+                    {
+                        break;
+                    }
+                }
+
                 if (request.result == UnityWebRequest.Result.Success)
                 {
                     data = request.downloadHandler.data;
 
-                   request.Dispose();
+                    request.Dispose();
                 }
-
             }
 #else
-            var data = File.ReadAllBytes(_path);
+        var data = File.ReadAllBytes(_path);
 #endif
             return new GlbLowLevelParser(_path, data).Parse();
         }
