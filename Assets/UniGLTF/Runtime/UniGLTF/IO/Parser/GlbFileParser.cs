@@ -1,4 +1,7 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections;
+using System.IO;
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace UniGLTF
@@ -18,23 +21,39 @@ namespace UniGLTF
         public GltfData Parse()
         {
 #if UNITY_WEBGL
-            byte[] data = null;
-            using (var request = new UnityWebRequest(_path, "GET"))
+            var obj = new GameObject("Network");
+            var data = obj.AddComponent<GlbFileParserBehaviourExtension>().LoadModel(_path);
+#else
+            var data = File.ReadAllBytes(_path);
+#endif
+            return new GlbLowLevelParser(_path, data).Parse();
+        }
+    }
+
+    public class GlbFileParserBehaviourExtension : MonoBehaviour
+    {
+        public byte[] data;
+
+        public byte[] LoadModel(string path)
+        {
+            StartCoroutine(ModelLoadCoroutine(path));
+            if (data != null)
+            {
+                return data;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        IEnumerator ModelLoadCoroutine(string path)
+        {
+            using (var request = new UnityWebRequest(path, "GET"))
             {
                 request.downloadHandler = new DownloadHandlerBuffer();
 
-                request.SendWebRequest();
-
-                while (!request.isDone)
-                {
-                    UnityEngine.Debug.Log(request.downloadProgress);
-                    if (request.result == UnityWebRequest.Result.ConnectionError || 
-                        request.result == UnityWebRequest.Result.DataProcessingError ||
-                        request.result == UnityWebRequest.Result.ProtocolError)
-                    {
-                        break;
-                    }
-                }
+                yield return request.SendWebRequest();
 
                 if (request.result == UnityWebRequest.Result.Success)
                 {
@@ -43,10 +62,6 @@ namespace UniGLTF
                     request.Dispose();
                 }
             }
-#else
-        var data = File.ReadAllBytes(_path);
-#endif
-            return new GlbLowLevelParser(_path, data).Parse();
         }
     }
 }
